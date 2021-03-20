@@ -1,0 +1,15 @@
+Getting raw audio for songs:
+	-Scrape song names from Billboard 100
+	-Use youtube-dl to get audio files
+
+To generate starting times:
+	-Similar process to fetching audio files, except search explicitly for "music video"
+	-Try and match fingerprint with audio files
+	-Limit sample window of audio to find when the song begins (incrementally advance window size)
+	-Store result in remote DB
+
+Plugin:
+	-Check url - if youtube, then check the video ID
+	-If data for this ID is present in remote DB, set current video time
+	-Done!
+
