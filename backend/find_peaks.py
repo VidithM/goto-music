@@ -52,7 +52,7 @@ PEAK_SORT = True
 # potentially higher collisions and misclassifications when identifying songs.
 FINGERPRINT_REDUCTION = 20
 
-def fingerprint(channel_samples, Fs=DEFAULT_FS,
+def get_sparse_map(channel_samples, Fs=DEFAULT_FS,
                 wsize=DEFAULT_WINDOW_SIZE,
                 wratio=DEFAULT_OVERLAP_RATIO,
                 fan_value=DEFAULT_FAN_VALUE,
@@ -68,8 +68,7 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
       plt.show()
       plt.gca().invert_yaxis()
 
-    # FFT the channel, log transform output, find local maxima, then return
-    # locally sensitive hashes.
+    # FFT the channel, log transform output, find and return local maxima
     # FFT the signal and extract frequency components
 
     # plot the angle spectrum of segments within the signal in a colormap
@@ -93,8 +92,7 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS,
     # find local maxima
     local_maxima = get_2D_peaks(arr2D, plot=plots, amp_min=amp_min)
 
-    # return hashes
-    return generate_hashes(local_maxima, fan_value=fan_value)
+    return local_maxima
 
 def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     # http://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.morphology.iterate_structure.html#scipy.ndimage.morphology.iterate_structure
@@ -135,30 +133,3 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
       plt.show()
 
     return zip(frequency_idx, time_idx)
-
-# Hash list structure: sha1_hash[0:20] time_offset
-# example: [(e05b341a9b77a51fd26, 32), ... ]
-def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
-    if PEAK_SORT:
-      peaks.sort(key=itemgetter(1))
-
-    # bruteforce all peaks
-    for i in range(len(peaks)):
-      for j in range(1, fan_value):
-        if (i + j) < len(peaks):
-
-          # take current & next peak frequency value
-          freq1 = peaks[i][IDX_FREQ_I]
-          freq2 = peaks[i + j][IDX_FREQ_I]
-
-          # take current & next -peak time offset
-          t1 = peaks[i][IDX_TIME_J]
-          t2 = peaks[i + j][IDX_TIME_J]
-
-          # get diff of time offsets
-          t_delta = t2 - t1
-
-          # check if delta is between min & max
-          if t_delta >= MIN_HASH_TIME_DELTA and t_delta <= MAX_HASH_TIME_DELTA:
-            h = hashlib.sha1("%s|%s|%s" % (str(freq1), str(freq2), str(t_delta)))
-            yield (h.hexdigest()[0:FINGERPRINT_REDUCTION], t1)

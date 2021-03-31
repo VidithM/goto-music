@@ -4,8 +4,8 @@ Getting raw audio for songs:
 
 To generate starting times:
 	-Similar process to fetching audio files, except search explicitly for "music video"
-	-Try and match fingerprint with audio files
-	-Limit sample window of audio to find when the song begins (incrementally advance window size)
+	-Limit sample window to find when the song begins (incrementally advance window bounds)
+	-Try and match sparse map (spectogram peaks) with audio file sparse map
 	-Store result in remote DB
 
 Plugin:
