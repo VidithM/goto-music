@@ -10,7 +10,7 @@ END = 10000 #Sample for 10 seconds
 THRESH = 0.6
 
 def match(audio_name, mv_name):
-    audio_file = AudioSegment.from_file(audio_name)[0:END]
+    audio_file = AudioSegment.from_file(audio_name)[5000:(END + 5000)]
     mv_file = AudioSegment.from_file(mv_name)
     
     data = np.frombuffer(audio_file._data, np.int16)
@@ -57,7 +57,7 @@ def match(audio_name, mv_name):
             best = l 
         #print(curr)    
         l += 500
-    return (best, mn)
+    return (best - 5000, mn)
 
 def difference(audio_maps, sample_maps):
     mean_offset = 0

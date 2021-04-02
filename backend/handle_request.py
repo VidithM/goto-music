@@ -1,3 +1,4 @@
 from collect import collect
 
-collect('Imagine Dragons: I Bet My Life')
+collect('Maroon 5: Sugar')
+collect('Maroon 5: Payphone')
