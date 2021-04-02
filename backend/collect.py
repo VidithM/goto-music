@@ -4,18 +4,18 @@ import match_peaks
 import json
 import os
 
+from db_update import push
 
 in_file = open('songs.out', 'r')
 
-for query in in_file:
-    print(query)
+def collect(query):
     res = json.loads(yts(query + ' audio', max_results=1).to_json())['videos'][0]
     dl = pafy.new(res['id'])
     stream = None
     if(len(dl.m4astreams) > 0):
         stream = dl.m4astreams[0]
     else:
-        continue        
+        return       
     audio_file = 'audio_only.' + stream.extension
 
     remove = glob.glob('audio_only.*')
@@ -30,7 +30,7 @@ for query in in_file:
     if(len(dl.m4astreams) > 0):
         stream = dl.m4astreams[0]
     else:
-        continue     
+        return   
     mv_file = 'music_video.' + stream.extension
 
     remove = glob.glob('music_video.*')

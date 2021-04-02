@@ -26,7 +26,7 @@ def match(audio_name, mv_name):
         audio_sparse_maps.append(list(smap))
 
     l = 0
-    length = mv_file.duration_seconds * 1000
+    length = 120000 #mv_file.duration_seconds * 1000
     best = None
     mn = -1
 
