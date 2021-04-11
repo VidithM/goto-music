@@ -1,3 +1,8 @@
+'''
+The following code is largely derived from:
+github.com/itspoma/audio-fingerprint-identifying-python
+With slight modifications
+'''
 import hashlib
 import numpy as np
 import matplotlib.mlab as mlab

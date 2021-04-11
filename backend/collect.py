@@ -23,7 +23,12 @@ db = firebase.database()
 in_file = open('songs.out', 'r')
 
 def collect(query):
-    res = json.loads(yts(query + ' audio', max_results=1).to_json())['videos'][0]
+    print(query)
+    try:
+        res = json.loads(yts(query + ' audio', max_results=1).to_json())['videos'][0]
+    except():
+        print('Error caught during video download')
+        return
     dl = pafy.new(res['id'])
     stream = None
     if(len(dl.m4astreams) > 0):
@@ -38,7 +43,11 @@ def collect(query):
 
     stream.download(filepath = audio_file)
     
-    res = json.loads(yts(query + ' music video', max_results=1).to_json())['videos'][0]
+    try:
+        res = json.loads(yts(query + ' music video', max_results=1).to_json())['videos'][0]
+    except():
+        print('Error caught during audio download')
+        return
     mv_id = res['id']
     dl = pafy.new(mv_id)
     stream = None

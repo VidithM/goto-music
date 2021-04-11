@@ -11,28 +11,57 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.database();
 var ref = db.ref('songs')
 
-var url = window.location.href;
-var id = url.substr(url.indexOf('?v=') + 3);
-var quiet = false;
-if(id.includes("&t=")){
-    quiet = true;
-}
+var currUrl = "";
+var inDb = true;
 
-var start = -1;
+async function jump(){
+    let url = window.location.href;
+    currUrl = url;
+    let id = url.substr(url.indexOf('?v=') + 3);
+    let quiet = false;
+    if(id.includes("&t=")){
+        return;
+    }
 
-ref.once("value", (snapshot) => {
-    snapshot.forEach((child) => {
-        if(child.key == id){
-            start = child.val();
+    let start = -1;
+
+    ref.once("value", (snapshot) => {
+        snapshot.forEach((child) => {
+            if(child.key == id){
+                if(child.val() >= 5000){
+                    start = child.val();
+                } else {
+                    quiet = true;
+                }
+            }
+        });
+    }).then(() => {
+        if(start != -1){
+            window.location.replace('https://youtube.com/watch?v=' + id + '&t=' + (Math.floor(start/1000)));
+        } else {
+            inDb = false;
+            if(!quiet){
+                alert('Video not in database')
+            }
         }
     });
-}).then(() => {
-    console.log(start);
-    if(start != -1){
-        window.location.replace('https://youtube.com/watch?v=' + id + '&t=' + (Math.floor(start/1000)));
-    } else {
-        if(!quiet){
-            alert('Video not in database')
+}
+
+async function monitorURL(){
+    let url = window.location.href;
+    console.log(url);
+    if(url.includes("?v=")){
+        if(url != currUrl){
+            inDb = true;
         }
+        if(!inDb){
+            return;
+        }
+        await jump();
     }
-});
+}
+
+setInterval(monitorURL, 1000);
+
+
+

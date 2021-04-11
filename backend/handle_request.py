@@ -1,4 +1,11 @@
 from collect import collect
 
-collect('Maroon 5: Sugar')
-collect('Maroon 5: Payphone')
+queries = open('songs.out', 'r')
+for ln in queries:
+    try:
+        collect(ln)
+    except:
+        print('Error while processing', ln)
+        continue
+
+queries.close()
