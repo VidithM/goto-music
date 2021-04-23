@@ -12,10 +12,12 @@ var db = firebase.database();
 var ref = db.ref('songs')
 
 var currUrl = "";
-var inDb = true;
+var processed = false;
 
 async function jump(){
+    processed = true;
     let url = window.location.href;
+    console.log('Checking ' + url);
     currUrl = url;
     let id = url.substr(url.indexOf('?v=') + 3);
     let quiet = false;
@@ -49,12 +51,12 @@ async function jump(){
 
 async function monitorURL(){
     let url = window.location.href;
-    console.log(url);
     if(url.includes("?v=")){
         if(url != currUrl){
-            inDb = true;
+            console.log('url change ' + url);
+            processed = false;
         }
-        if(!inDb){
+        if(processed){
             return;
         }
         await jump();
