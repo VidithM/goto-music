@@ -19,9 +19,17 @@ async function jump(){
     let url = window.location.href;
     console.log('Checking ' + url);
     currUrl = url;
-    let id = url.substr(url.indexOf('?v=') + 3);
+    let id = "";
+    let extra = "";
+    if(url.indexOf("&") != -1){
+        id = url.substring(url.indexOf('?v=') + 3, url.indexOf("&"));
+        extra = url.substring(url.indexOf("&"));
+    } else {
+        id = url.substring(url.indexOf("?v=") + 3);
+    }
+    console.log(id);
     let quiet = false;
-    if(id.includes("&t=")){
+    if(url.includes("&t=")){
         return;
     }
 
@@ -39,9 +47,8 @@ async function jump(){
         });
     }).then(() => {
         if(start != -1){
-            window.location.replace('https://youtube.com/watch?v=' + id + '&t=' + (Math.floor(start/1000)));
+            window.location.replace('https://youtube.com/watch?v=' + id + extra + '&t=' + (Math.floor(start/1000)));
         } else {
-            inDb = false;
             if(!quiet){
                 alert('Video not in database')
             }
@@ -64,6 +71,15 @@ async function monitorURL(){
 }
 
 setInterval(monitorURL, 1000);
+
+
+//Handle requests for new song
+chrome.runtime.onMessage.addListener((msg, from, response) => {
+    alert('received msg from background');
+    if(msg == "add-song"){
+        response("ok");
+    }
+});
 
 
 

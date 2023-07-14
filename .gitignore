@@ -1,1 +1,3 @@
 backend/test_audioseg.py
+backend/__pycache__
+.DS_Store

@@ -12,3 +12,9 @@ This codebase is used throughout this project for Fourier transform/spectogram a
 
 ## References
 https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf
+
+## FAQ
+### How do I run the backend?
+* `handle_request.py` is the entry point that reads song names from `songs.out`, fetches their audio/video files, and finds the start point.
+### Some of the Python packages used in this project (i.e `pafy`, `youtube_dl`, etc.) are not working correctly. Why?
+* Some of these packages are not compatible with Python 3.10+. Please run with Python 3.9. In addition, you may run across some exceptions in `pafy` with KeyErrors with keys such as `average_rating`. This is a current bug with `pafy` that must be fixed. In the meantime, what worked for me was modifying [this file](https://github.com/mps-youtube/pafy/blob/develop/pafy/backend_youtube_dl.py) on lines 47-58 as needed to use `.get()` with a default value. 

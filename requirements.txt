@@ -1,0 +1,9 @@
+pafy
+youtube-search
+youtube_dl
+pyaudio
+pyrebase
+matplotlib
+numpy
+pydub
+
