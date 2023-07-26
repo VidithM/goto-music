@@ -22,11 +22,16 @@ JUMP_UPPER = 800        # Upper bound on amount to jump in milliseconds for each
 AUDIO_SAMPLE_OFFSET = 5000  # Offset from the start of the audio for the audio sample
 MAX_SAMPLE_TIME = 120000    # Upper bound on timestamp in the video to be sampled
 
+NPEAKS_THRESH = 150
+
 '''
 TODO:
 It seems that incorrect results can be produced when the start of the music video is quiet
     - Possible reason: Poor fingerprint on the spectrogram?
-    - Solutions:
+    - Solutions: ignore samples with low peak counts
+
+Also should consider altering the audio sample to start at a point that has a good number of peaks
+(if start of song is quiet, for example)
 '''
 
 '''
@@ -54,8 +59,6 @@ def match(audio_name, mv_name):
     mn = -1
 
     while((l + SAMPLE_DURATION) <= length):
-        if(l % 10000 == 0):
-            print('At time', l / 1000, '(s)')
         sample = mv_file[l : (l + SAMPLE_DURATION)]
         progress = l / length
         curr_thresh = (THRESH_UPPER - THRESH_LOWER) * (progress ** 2) + THRESH_LOWER
@@ -89,10 +92,17 @@ def match(audio_name, mv_name):
 
 def difference(audio_maps, sample_maps):
     mean_offset = 0
+    mean_npeaks = 0
     map_cnt = min(len(audio_maps), len(sample_maps))
     for i in range(map_cnt):
         mean_offset += offset(audio_maps[i], sample_maps[i])
+        mean_npeaks += len(sample_maps[i])
 
+    mean_npeaks /= map_cnt
+    if(mean_npeaks < NPEAKS_THRESH):
+        # Do not consider this sample as valid; not enough peaks (too quiet)
+        return float('inf')
+    
     return (mean_offset / map_cnt)
 
 

@@ -47,7 +47,8 @@ async function jump(){
         });
     }).then(() => {
         if(start != -1){
-            window.location.replace('https://youtube.com/watch?v=' + id + extra + '&t=' + (Math.floor(start/1000)));
+            let player = document.getElementsByClassName('video-stream html5-main-video')[0];
+            player.currentTime = (start / 1000);
         } else {
             if(!quiet){
                 alert('Video not in database')
