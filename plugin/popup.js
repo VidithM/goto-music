@@ -8,5 +8,3 @@ async function requestAddSong(){
         }
     });
 }
-
-console.log(document.);

@@ -2,8 +2,8 @@ from bs4 import BeautifulSoup as bs
 import requests, time 
 
 BASE_URL = 'https://www.billboard.com/charts/year-end/'
-START = 2015
-END = 2020
+START = 2020
+END = 2022
 
 SONG_CLASS = 'ye-chart-item__title'
 ARTIST_CLASS = 'ye-chart-item__artist'

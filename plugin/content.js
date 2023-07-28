@@ -14,7 +14,7 @@ var ref = db.ref('songs')
 var currUrl = "";
 var processed = false;
 
-async function jump(){
+function jump(){
     processed = true;
     let url = window.location.href;
     console.log('Checking ' + url);
@@ -57,7 +57,7 @@ async function jump(){
     });
 }
 
-async function monitorURL(){
+function monitorURL(){
     let url = window.location.href;
     if(url.includes("?v=")){
         if(url != currUrl){
@@ -67,7 +67,7 @@ async function monitorURL(){
         if(processed){
             return;
         }
-        await jump();
+        jump();
     }
 }
 

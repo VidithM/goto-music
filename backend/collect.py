@@ -23,12 +23,12 @@ def collect(query):
         stream = dl.m4astreams[0]
     else:
         return       
-    print('passed1')
+
     audio_file = 'audio_only.' + stream.extension
     remove = glob.glob('audio_only.*')
     for name in remove:
         os.remove(name)
-    print('passed')
+
     stream.download(filepath = audio_file)
     
     try:
@@ -36,13 +36,16 @@ def collect(query):
     except(Exception) as e:
         print('Exception during video download:', e)
         return
+
     mv_id = res['id']
     dl = pafy.new(mv_id)
     stream = None
+    
     if(len(dl.m4astreams) > 0):
         stream = dl.m4astreams[0]
     else:
         return   
+
     mv_file = 'music_video.' + stream.extension
 
     remove = glob.glob('music_video.*')

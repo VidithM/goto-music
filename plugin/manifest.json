@@ -11,10 +11,12 @@
     },
     "content_scripts" : [{
         "matches" : ["https://*.youtube.com/*"],
-        "js" : ["js-dependencies/firebase-app.js", 
+        "js" : [
+                "js-dependencies/firebase-app.js", 
                 "js-dependencies/firebase-database.js",
                 "js-dependencies/firebase-auth.js",
-                "content.js"]
+                "content.js"
+            ]
     }],
     "browser_action" : {
         "default_icon" : "goto-music16x16.png",
