@@ -2,40 +2,100 @@
 #include <Python.h>
 #include <omp.h>
 
-#define DEFAULT_CAP 10
+#define OUT_OF_BOUNDS -1
+#define SUCCESS        0
 
 typedef struct pair {
     double x;
     double y;
 } pair;
 
-typedef struct plist {
-    size_t len, cap;
-    pair* data;
-} plist;
+typedef struct tree {
+    size_t cap;
+    pair *data;
+    int *init;
+} tree;
 
-static int init = 0;
-static struct plist queries, points;
+static int do_free = 0;
 
-void plist_init(plist* list){
-    list->data = (pair*) malloc(DEFAULT_CAP * sizeof(pair));
-    list->cap = DEFAULT_CAP;
+static tree sample;
+static pair* queries;
+
+static uint64_t tree_init(tree *tree, size_t cap){
+    tree->data = (pair*) malloc(cap * sizeof(pair));
+    tree->init = (int*) malloc(cap * sizeof(int));
+    memset(tree->init, 0, cap * sizeof(int));
+    tree->cap = cap;
+    return SUCCESS;
 }
 
-void plist_add(plist* list){
-    
+static uint64_t tree_free(tree *tree){
+    free(tree->data);
+    free(tree->init);
+    tree->cap = 0;
+    return SUCCESS;
 }
 
-static PyObject* add_point(PyObject *self, PyObject *args){
-    return PyLong_FromLong(0);
+static uint64_t tree_add(tree *tree, pair *elem){
+    int lvl = 0;
+    size_t at = 1;
+    while(1){
+        double elem_coord = elem->x;
+        double curr_coord = tree->data[at].x;
+        if(lvl & 1){
+            elem_coord = elem->y;
+            curr_coord = tree->data[at].y;
+        }
+        if(elem_coord < curr_coord){
+            if(!tree->init[at << 1]){
+                tree->data[at << 1] = *elem;
+                tree->init[at << 1] = 1;
+                break;
+            } else {
+                at <<= 1;
+            }
+        } else {
+            if(!tree->init[(at << 1) + 1]){
+                tree->data[(at << 1) + 1] = *elem;
+                tree->init[(at << 1) + 1] = 1;
+                break;
+            } else {
+                at <<= 1; at++;
+            }
+        }
+    }
 }
 
-static PyObject* add_query(PyObject *self, PyObject *args){
-    return PyLong_FromLong(0);
+static uint64_t tree_query(pair *res, tree *tree, pair *query){
+
 }
 
-static PyObject* run_queries(PyObject *self, PyObject *args){
-    return PyLong_FromLong(0);
+static uint64_t dist(double *res, pair *a, pair *b){
+    (*res) = (a->x * a->x) + (a->y * a->y);
+}
+
+static PyObject* reset(PyObject* self, PyObject* args){
+    if(do_free){
+        tree_free(&sample);
+        free(queries);
+    }
+    do_free = 1;
+    // TODO: read this from args
+    size_t cap = 1;
+    tree_init(&sample, cap);
+    return PyLong_FromLong(SUCCESS);
+}
+
+static PyObject* add_point(PyObject* self, PyObject* args){
+    return PyLong_FromLong(SUCCESS);
+}
+
+static PyObject* add_query(PyObject* self, PyObject* args){
+    return PyLong_FromLong(SUCCESS);
+}
+
+static PyObject* run_queries(PyObject* self, PyObject* args){
+    return PyLong_FromLong(SUCCESS);
 }
 
 static PyMethodDef export_methods[] = {
@@ -47,7 +107,7 @@ static PyMethodDef export_methods[] = {
 
 static struct PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
-    "kdtree",
+    "tree",
     "Parallel KD Tree",
     -1,
     export_methods
