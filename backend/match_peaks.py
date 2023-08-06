@@ -22,7 +22,11 @@ JUMP_UPPER = 800        # Upper bound on amount to jump in milliseconds for each
 AUDIO_SAMPLE_OFFSET = 5000  # Offset from the start of the audio for the audio sample
 MAX_SAMPLE_TIME = 120000    # Upper bound on timestamp in the video to be sampled
 
+# Minimum number of peaks needed to register a valid sample
 NPEAKS_THRESH = 150
+
+# Number of audio channels to use (uses the first NUM_CHANNELS channels)
+NUM_CHANNELS = 1
 
 '''
 TODO:
@@ -46,7 +50,7 @@ def match(audio_name, mv_name):
     audio_channels = []
     audio_sparse_maps = [] # freq/time mappings of amp peaks in spectogram
 
-    for i in range(audio_file.channels):
+    for i in range(NUM_CHANNELS):
         audio_channels.append(data[i::audio_file.channels])
 
     for channel_data in audio_channels:
@@ -59,17 +63,18 @@ def match(audio_name, mv_name):
     mn = -1
 
     while((l + SAMPLE_DURATION) <= length):
+        start_tot = time.perf_counter()
+        start_smap = end_smap = -1
         sample = mv_file[l : (l + SAMPLE_DURATION)]
         progress = l / length
         curr_thresh = (THRESH_UPPER - THRESH_LOWER) * (progress ** 2) + THRESH_LOWER
 
         sample_channels = []
         sample_sparse_maps = []
-
         data = np.frombuffer(sample._data, np.int16)
-        for i in range(sample.channels):
+        for i in range(NUM_CHANNELS):
             sample_channels.append(data[i::sample.channels])
-
+        
         for channel_data in sample_channels:
             smap = fp.get_sparse_map(channel_data, mv_file.frame_rate)
             sample_sparse_maps.append(list(smap))
@@ -85,8 +90,10 @@ def match(audio_name, mv_name):
             mn = curr 
             best = l 
 
-        print(curr, l)    
+        print(curr, l)   
         l += (JUMP_UPPER - JUMP_LOWER) * (progress ** 2) + JUMP_LOWER
+        end_tot = time.perf_counter()
+        # print(f'Ratio is {(end_smap - start_smap) / (end_tot - start_tot)}')
 
     return (best - AUDIO_SAMPLE_OFFSET, mn)
 
