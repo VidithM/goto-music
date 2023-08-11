@@ -185,6 +185,11 @@ static PyObject* run_queries(PyObject* self, PyObject* args){
 }
 
 // Module definitions
+
+static PyObject* version(PyObject* self){
+    return Py_BuildValue("s", "1.0");
+}
+
 static PyMethodDef export_methods[] = {
     {"reset", reset, METH_VARARGS, "Reset the tree"},
     {"add_point", add_point, METH_VARARGS, "Add a reference point"},
@@ -195,12 +200,12 @@ static PyMethodDef export_methods[] = {
 
 static struct PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
-    "tree",
+    "pkd",
     "Parallel KD Tree",
     -1,
     export_methods
 };
 
-PyMODINIT_FUNC PyInit_libParallelKDTree(){
+PyMODINIT_FUNC PyInit_pkd(){
     return PyModule_Create(&module);
 }

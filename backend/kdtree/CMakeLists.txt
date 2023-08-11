@@ -5,21 +5,22 @@ set (CMAKE_CXX_COMPILER "/usr/local/bin/g++")
 endif ()
 
 cmake_minimum_required (VERSION 3.0)
-project (ParallelKDTree)
+project (pkd)
 
 find_package (Python REQUIRED COMPONENTS Development)
 find_package (OpenMP REQUIRED)
 
-add_library (ParallelKDTree SHARED module.c)
+add_library (pkd SHARED module.c)
 
+set_target_properties (pkd PROPERTIES PREFIX "")
 if (NOT WIN32)
-set_target_properties (ParallelKDTree PROPERTIES SUFFIX ".so")
+set_target_properties (pkd PROPERTIES SUFFIX ".so")
 endif()
 
 # Add Python include/linker flags
-target_include_directories (ParallelKDTree PRIVATE "${Python_INCLUDE_DIRS}")
-target_link_libraries (ParallelKDTree PRIVATE "${Python_LIBRARIES}")
+target_include_directories (pkd PRIVATE "${Python_INCLUDE_DIRS}")
+target_link_libraries (pkd PRIVATE "${Python_LIBRARIES}")
 
 # Add OpenMP linker flags
-target_link_libraries (ParallelKDTree PRIVATE "${OpenMP_C_FLAGS}")
-target_compile_options (ParallelKDTree PRIVATE "${OpenMP_C_FLAGS}")
+target_link_libraries (pkd PRIVATE "${OpenMP_C_FLAGS}")
+target_compile_options (pkd PRIVATE "${OpenMP_C_FLAGS}")
