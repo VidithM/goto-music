@@ -7,10 +7,19 @@ endif ()
 cmake_minimum_required (VERSION 3.0)
 project (pkd)
 
+# Find Python and OpenMP
 find_package (Python REQUIRED COMPONENTS Development)
 find_package (OpenMP REQUIRED)
 
-add_library (pkd SHARED module.c)
+# Set project include/src paths, get all headers and source files, configure final library
+set (PKD_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set (PKD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+message (STATUS "USING INCLUDE DIR: ${PKD_INCLUDE_DIR}")
+message (STATUS "USING SOURCE DIR: ${PKD_SOURCE_DIR}")
+
+file (GLOB PKD_SOURCE_FILES "${PKD_SOURCE_DIR}/*.c")
+add_library (pkd SHARED "${PKD_SOURCE_FILES}")
+target_include_directories (pkd PRIVATE "${PKD_INCLUDE_DIR}")
 
 set_target_properties (pkd PROPERTIES PREFIX "")
 if (NOT WIN32)

@@ -2,6 +2,9 @@
 #include <Python.h>
 #include <omp.h>
 
+#include "types.h"
+#include "debug.h"
+
 #define NTHREADS       1
 #define MAX_MSG_LEN    256
 
@@ -9,6 +12,7 @@
 #define OUT_OF_BOUNDS -1
 #define SUCCESS        0
 
+int msg_written = 0;
 char msg[MAX_MSG_LEN];
 
 #define TRY(status)                         \
@@ -21,18 +25,6 @@ char msg[MAX_MSG_LEN];
     }                                       \
 }                                           \
 
-// Structs
-typedef struct pair {
-    double x;
-    double y;
-} pair;
-
-typedef struct tree {
-    size_t cap, npts;
-    pair *data;
-    int *init;
-} tree;
-
 // Util functions
 static uint64_t dist(double *res, pair *a, pair *b){
     (*res) = (a->x * a->x) + (a->y * a->y);
@@ -40,6 +32,7 @@ static uint64_t dist(double *res, pair *a, pair *b){
 }
 
 static uint64_t dfs(double *res, tree *tree, pair *query, size_t at, int lvl){
+    printf("in dfs %d %d\n", lvl, tree->init[at]);
     double query_coord = query->x;
     double curr_coord = tree->data[at].x;
     if(lvl & 1){
@@ -92,42 +85,45 @@ static uint64_t tree_free(tree *tree){
     free(tree->data);
     free(tree->init);
     tree->cap = 0;
+    tree->npts = 0;
     return SUCCESS;
 }
 
 static uint64_t tree_add(tree *tree, pair *elem){
     int lvl = 0;
     size_t at = 1;
+    printf("here %d\n", tree->init[1]);
     if(!tree->init[1]){
         tree->init[1] = 1;
         tree->data[1] = *elem;
-        return SUCCESS;
-    }
-    while(1){
-        double elem_coord = elem->x;
-        double curr_coord = tree->data[at].x;
-        if(lvl & 1){
-            elem_coord = elem->y;
-            curr_coord = tree->data[at].y;
-        }
-        if(elem_coord < curr_coord){
-            if(!tree->init[at << 1]){
-                tree->data[at << 1] = *elem;
-                tree->init[at << 1] = 1;
-                break;
-            } else {
-                at <<= 1;
+    } else {
+        while(1){
+            printf("passed here when adding\n");
+            double elem_coord = elem->x;
+            double curr_coord = tree->data[at].x;
+            if(lvl & 1){
+                elem_coord = elem->y;
+                curr_coord = tree->data[at].y;
             }
-        } else {
-            if(!tree->init[(at << 1) + 1]){
-                tree->data[(at << 1) + 1] = *elem;
-                tree->init[(at << 1) + 1] = 1;
-                break;
+            if(elem_coord < curr_coord){
+                if(!tree->init[at << 1]){
+                    tree->data[at << 1] = *elem;
+                    tree->init[at << 1] = 1;
+                    break;
+                } else {
+                    at <<= 1;
+                }
             } else {
-                at <<= 1; at++;
+                if(!tree->init[(at << 1) + 1]){
+                    tree->data[(at << 1) + 1] = *elem;
+                    tree->init[(at << 1) + 1] = 1;
+                    break;
+                } else {
+                    at <<= 1; at++;
+                }
             }
+            lvl ^= 1;
         }
-        lvl ^= 1;
     }
     return SUCCESS;
 }
@@ -135,6 +131,7 @@ static uint64_t tree_add(tree *tree, pair *elem){
 static uint64_t tree_query(double *ans, tree *tree, pair *query){
     double res = 1e18;
     TRY(dfs(&res, tree, query, 1, 0));
+    // printf("%0.3f\n", res);
     (*ans) = res;
     return SUCCESS;
 }
@@ -142,7 +139,7 @@ static uint64_t tree_query(double *ans, tree *tree, pair *query){
 // Module functions (exposed to Python)
 static PyObject* reset(PyObject* self, PyObject* args){
     if(do_free){
-        tree_free(&sample);
+        TRY(tree_free(&sample));
         free(queries);
     }
     do_free = 1;
@@ -152,7 +149,7 @@ static PyObject* reset(PyObject* self, PyObject* args){
         return PyLong_FromLong(PARSE_ERROR);
     }
 
-    tree_init(&sample, tree_cap);
+    TRY(tree_init(&sample, tree_cap));
     queries = (pair*) malloc(query_cap * sizeof(pair));
     nqueries = 0;
 
@@ -164,6 +161,10 @@ static PyObject* add_point(PyObject* self, PyObject* args){
     if(!PyArg_ParseTuple(args, "dd", &x, &y)){
         return PyLong_FromLong(PARSE_ERROR);
     }
+    pair put; put.x = x; put.y = y;
+    printf("adding tree point %0.3f %0.3f\n", x, y);
+    TRY(tree_add(&sample, &put));
+    sample.npts++;
     return PyLong_FromLong(SUCCESS);
 }
 
@@ -173,19 +174,30 @@ static PyObject* add_query(PyObject* self, PyObject* args){
     if(!PyArg_ParseTuple(args, "dd", &x, &y)){
         return PyLong_FromLong(PARSE_ERROR);
     }
-
+    printf("adding query point %0.3f %0.3f\n", x, y);
     queries[nqueries].x = x; queries[nqueries].y = y;
     nqueries++;
+    debug_pair_list(queries, nqueries);
 
     return PyLong_FromLong(SUCCESS);
 }
-
+/*
+Above functions all return 0 upon success. run_queries is the exception, it returns
+the average of all query results
+*/
 static PyObject* run_queries(PyObject* self, PyObject* args){
-    return PyLong_FromLong(SUCCESS);
+    double res = 0;
+    for(size_t i = 0; i < nqueries; i++){
+        double best;
+        printf("calling query\n");
+        TRY(tree_query(&best, &sample, &queries[i]));
+        res += best;
+    }
+    res /= nqueries;
+    return Py_BuildValue("d", res);
 }
 
 // Module definitions
-
 static PyObject* version(PyObject* self){
     return Py_BuildValue("s", "1.0");
 }
@@ -195,6 +207,7 @@ static PyMethodDef export_methods[] = {
     {"add_point", add_point, METH_VARARGS, "Add a reference point"},
     {"add_query", add_query, METH_VARARGS, "Add a query point"},
     {"run_queries", run_queries, METH_VARARGS, "Run added queries"},
+    {"version", (PyCFunction) version, METH_NOARGS, "Current extension version"},
     {NULL, NULL, 0, NULL}
 };
 

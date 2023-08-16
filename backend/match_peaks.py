@@ -1,12 +1,13 @@
 import pyaudio
-import math, random
+import math, time, random
 import numpy as np 
 import find_peaks as fp
-from search_tree import SearchTree
 
+import sys
+sys.path.append('./kdtree/build')
+
+import pkd
 from pydub import AudioSegment
-
-import time
 
 SAMPLE_DURATION = 10000 # Length of the audio/video samples
 
@@ -116,7 +117,7 @@ def difference(audio_maps, sample_maps):
 def offset(mapA, mapB):
     init = time.time() * 1000
     mean_dist = 0
-    st = SearchTree()
+    pkd.reset()
     #print('sizes:',len(mapA), len(mapB))
     random.shuffle(mapA) #Reduce tree height
     for i in mapA:
