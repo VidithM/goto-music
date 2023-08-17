@@ -15,8 +15,9 @@
 int msg_written = 0;
 char msg[MAX_MSG_LEN];
 
-#define TRY(status)                         \
+#define TRY(func)                           \
 {                                           \
+    int status = func;                      \
     if(status > 0){                         \
         printf("[WARNING]: %s\n", msg);     \
     } else if (status < 0){                 \
@@ -26,13 +27,12 @@ char msg[MAX_MSG_LEN];
 }                                           \
 
 // Util functions
-static uint64_t dist(double *res, pair *a, pair *b){
-    (*res) = (a->x * a->x) + (a->y * a->y);
+static int64_t dist(double *res, pair *a, pair *b){
+    (*res) = ((a->x - b->x) * (a->x - b->x)) + ((a->y - b->y) * (a->y - b->y));
     return SUCCESS;
 }
 
-static uint64_t dfs(double *res, tree *tree, pair *query, size_t at, int lvl){
-    printf("in dfs %d %d\n", lvl, tree->init[at]);
+static int64_t dfs(double *res, tree *tree, pair *query, size_t at, int lvl){
     double query_coord = query->x;
     double curr_coord = tree->data[at].x;
     if(lvl & 1){
@@ -72,7 +72,12 @@ static pair *queries;
 static size_t nqueries = 0;
 
 // Internal functions
-static uint64_t tree_init(tree *tree, size_t cap){
+static int64_t tree_init(tree *tree, size_t cap){
+    size_t next_p2 = 1;
+    while(next_p2 < cap){
+        next_p2 <<= 1;
+    }
+    cap = next_p2;
     tree->data = (pair*) malloc(cap * sizeof(pair));
     tree->init = (int*) malloc(cap * sizeof(int));
     memset(tree->init, 0, cap * sizeof(int));
@@ -81,7 +86,7 @@ static uint64_t tree_init(tree *tree, size_t cap){
     return SUCCESS;
 }
 
-static uint64_t tree_free(tree *tree){
+static int64_t tree_free(tree *tree){
     free(tree->data);
     free(tree->init);
     tree->cap = 0;
@@ -89,16 +94,14 @@ static uint64_t tree_free(tree *tree){
     return SUCCESS;
 }
 
-static uint64_t tree_add(tree *tree, pair *elem){
+static int64_t tree_add(tree *tree, pair *elem){
     int lvl = 0;
     size_t at = 1;
-    printf("here %d\n", tree->init[1]);
     if(!tree->init[1]){
         tree->init[1] = 1;
         tree->data[1] = *elem;
     } else {
         while(1){
-            printf("passed here when adding\n");
             double elem_coord = elem->x;
             double curr_coord = tree->data[at].x;
             if(lvl & 1){
@@ -128,7 +131,7 @@ static uint64_t tree_add(tree *tree, pair *elem){
     return SUCCESS;
 }
 
-static uint64_t tree_query(double *ans, tree *tree, pair *query){
+static int64_t tree_query(double *ans, tree *tree, pair *query){
     double res = 1e18;
     TRY(dfs(&res, tree, query, 1, 0));
     // printf("%0.3f\n", res);
@@ -189,7 +192,6 @@ static PyObject* run_queries(PyObject* self, PyObject* args){
     double res = 0;
     for(size_t i = 0; i < nqueries; i++){
         double best;
-        printf("calling query\n");
         TRY(tree_query(&best, &sample, &queries[i]));
         res += best;
     }
