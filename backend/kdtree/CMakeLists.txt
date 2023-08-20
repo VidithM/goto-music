@@ -7,8 +7,10 @@ endif ()
 cmake_minimum_required (VERSION 3.0)
 project (pkd)
 
+set (PYTHON_VERSION "3.9")
+
 # Find Python and OpenMP
-find_package (Python REQUIRED COMPONENTS Development)
+find_package (Python "${PYTHON_VERSION}" EXACT REQUIRED COMPONENTS Development)
 find_package (OpenMP REQUIRED)
 
 # Set project include/src paths, get all headers and source files, configure final library

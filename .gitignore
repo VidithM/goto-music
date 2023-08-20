@@ -1,4 +1,5 @@
 backend/test_audioseg.py
 backend/__pycache__
 backend/*.m4a
+backend/songs.out
 .DS_Store

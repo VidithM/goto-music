@@ -64,7 +64,6 @@ def match(audio_name, mv_name):
     mn = -1
 
     while((l + SAMPLE_DURATION) <= length):
-        start_tot = time.perf_counter()
         start_smap = end_smap = -1
         sample = mv_file[l : (l + SAMPLE_DURATION)]
         progress = l / length
@@ -81,7 +80,6 @@ def match(audio_name, mv_name):
             sample_sparse_maps.append(list(smap))
 
         try:
-            init = time.time() * 1000
             curr = difference(audio_sparse_maps, sample_sparse_maps)
         except(Exception) as e:
             print('Encountered exception', e, 'while sampling')
@@ -93,7 +91,6 @@ def match(audio_name, mv_name):
 
         print(curr, l)   
         l += (JUMP_UPPER - JUMP_LOWER) * (progress ** 2) + JUMP_LOWER
-        end_tot = time.perf_counter()
         # print(f'Ratio is {(end_smap - start_smap) / (end_tot - start_tot)}')
 
     return (best - AUDIO_SAMPLE_OFFSET, mn)
@@ -114,22 +111,19 @@ def difference(audio_maps, sample_maps):
     return (mean_offset / map_cnt)
 
 
-def offset(mapA, mapB):
-    init = time.time() * 1000
+def offset(audio_map, sample_map):
     mean_dist = 0
-    pkd.reset()
-    #print('sizes:',len(mapA), len(mapB))
-    random.shuffle(mapA) #Reduce tree height
-    for i in mapA:
-        #print(i[0], i[1])
-        st.push(i[0], i[1])
-    #print('building done. Time was', (time.time() * 1000 - init))
-    init = time.time() * 1000
-    for j in mapB:
-        #print(j, st.query(j[0], j[1], False))
-        res = st.query(j[0], j[1], False)
-        mean_dist += res[0]
-    
-    #print('query end. Time was', (time.time() * 1000 - init), 'Visited count:', res[1])
-    
-    return (mean_dist / len(mapB))
+    pkd.reset(len(sample_map))
+    # print('audio_map len', len(audio_map))
+    # print('sizes:',len(audio_map), len(sample_map))
+    random.shuffle(audio_map) #Reduce tree height
+    for i in audio_map:
+        # print(i[0], i[1])
+        pkd.add_point(i[0], i[1])
+    # print('done adding audio_map points')
+    # print('building done. Time was', (time.time() * 1000 - init))
+    for j in sample_map:
+        # print(j, st.query(j[0], j[1], False))
+        pkd.add_query(j[0], j[1])
+
+    return pkd.run_queries()

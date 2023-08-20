@@ -8,6 +8,5 @@ void debug_pair_list(pair *pairs, size_t npairs){
 }
 
 void debug_tree(tree *tree){
-    printf("*** [DEBUG] printing tree with %zu cap and %zu points\n", tree->cap, tree->npts);
     
 }

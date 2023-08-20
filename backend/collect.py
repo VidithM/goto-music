@@ -18,6 +18,7 @@ def collect(query):
     
     dl = pafy.new(res['id'])
     stream = None
+    print("===== AUDIO SOURCE =====")
     print(dl)
     if(len(dl.m4astreams) > 0):
         stream = dl.m4astreams[0]
@@ -40,7 +41,8 @@ def collect(query):
     mv_id = res['id']
     dl = pafy.new(mv_id)
     stream = None
-    
+    print("==== VIDEO SOURCE ====")
+    print(dl)
     if(len(dl.m4astreams) > 0):
         stream = dl.m4astreams[0]
     else:
