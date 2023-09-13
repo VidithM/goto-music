@@ -81,36 +81,42 @@ static int64_t dfs(double *res, tree *t, pair *query, int lvl){
 // Global state
 static int do_free = 0;
 
-static tree *sample;
+static tree sample;
 
 static pair *queries;
 static size_t nqueries = 0;
 
 // Internal functions
-static int64_t tree_init(tree **t){
+static int64_t tree_init(tree *t, size_t cap){
     if(t == NULL){
         write_msg("Passed null pointer to tree_init");
         return NULL_POINTER;
     }
-    (*t) = (tree*) malloc(sizeof(tree));
-    (*t)->left = NULL;
-    (*t)->right = NULL;
-    (*t)->init = 0;
+    t->data = (pair*) malloc(cap * sizeof(pair));
+    t->to_left = (size_t*) malloc(cap * sizeof(size_t));
+    t->to_right = (size_t*) malloc(cap * sizeof(size_t));
+    t->cap = cap;
+    t->nxt_avail = 0;
     return SUCCESS;
 }
 
 static int64_t tree_free(tree *t){
-    if(t->left != NULL){
-        tree_free(t->left);
+    if(t == NULL){
+        write_msg("Passed null pointer to tree_free");
+        return NULL_POINTER;
     }
-    if(t->right != NULL){
-        tree_free(t->right);
-    }
-    free(t);
+    free(t->elems);
+    free(t->to_left);
+    free(t->to_right);
+    t->cap = t->nxt_avail = 0;
     return SUCCESS;
 }
 
 static int64_t tree_add(tree *t, pair *elem){
+    if(t == NULL){
+        write_msg("Passed null pointer to tree_add");
+        return NULL_POINTER;
+    }
     int lvl = 0;
     tree *curr = t;
     if(!curr->init){

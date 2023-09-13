@@ -9,7 +9,8 @@ typedef struct pair {
 } pair;
 
 typedef struct tree {
-    struct tree *left, *right;
-    int init;
-    pair data;
+    pair *data;
+    size_t *to_left, *to_right;
+    size_t nxt_avail;
+    size_t cap;
 } tree;
