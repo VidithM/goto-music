@@ -49,30 +49,30 @@ static int64_t dist(double *res, pair *a, pair *b){
     return SUCCESS;
 }
 
-static int64_t dfs(double *res, tree *t, pair *query, int lvl){
+static int64_t dfs(double *res, tree *t, size_t at, pair *query, int lvl){
     double query_coord = query->x;
-    double curr_coord = t->data.x;
+    double curr_coord = t->data[at].x;
     if(lvl & 1){
         query_coord = query->y;
-        curr_coord = t->data.y;
+        curr_coord = t->data[at].y;
     }
     double curr_dist;
-    dist(&curr_dist, query, &t->data);
+    dist(&curr_dist, query, &t->data[at]);
     (*res) = fmin(*res, curr_dist);
 
     if(query_coord > curr_coord){
-        if(t->right != NULL){
-            TRY(dfs(res, t->right, query, lvl ^ 1));
+        if(t->has_right[at]){
+            TRY(dfs(res, t, t->to_right[at], query, lvl ^ 1));
         }
-        if((t->left != NULL) && ((query_coord - curr_coord) * (query_coord - curr_coord) < (*res))){
-            TRY(dfs(res, t->left, query, lvl ^ 1));
+        if((t->has_left[at]) && ((query_coord - curr_coord) * (query_coord - curr_coord) < (*res))){
+            TRY(dfs(res, t, t->to_left[at], query, lvl ^ 1));
         }
     } else {
-        if(t->left != NULL){
-            TRY(dfs(res, t->left, query, lvl ^ 1));
+        if(t->has_left[at]){
+            TRY(dfs(res, t, t->to_left[at], query, lvl ^ 1));
         }
-        if((t->right != NULL) && (((query_coord - curr_coord) * (query_coord - curr_coord)) < (*res))){
-            TRY(dfs(res, t->right, query, lvl ^ 1));
+        if((t->has_right[at]) && (((query_coord - curr_coord) * (query_coord - curr_coord)) < (*res))){
+            TRY(dfs(res, t, t->to_right[at], query, lvl ^ 1));
         }
     }
     return SUCCESS;
@@ -81,66 +81,87 @@ static int64_t dfs(double *res, tree *t, pair *query, int lvl){
 // Global state
 static int do_free = 0;
 
-static tree *sample;
+static tree sample;
 
 static pair *queries;
 static size_t nqueries = 0;
 
 // Internal functions
-static int64_t tree_init(tree **t){
+static int64_t tree_init(tree *t, size_t cap){
     if(t == NULL){
         write_msg("Passed null pointer to tree_init");
         return NULL_POINTER;
     }
-    (*t) = (tree*) malloc(sizeof(tree));
-    (*t)->left = NULL;
-    (*t)->right = NULL;
-    (*t)->init = 0;
+    t->data = (pair*) malloc(cap * sizeof(pair));
+    t->to_left = (size_t*) malloc(cap * sizeof(size_t));
+    t->to_right = (size_t*) malloc(cap * sizeof(size_t));
+    t->has_left = (int*) malloc(cap * sizeof(int));
+    t->has_right = (int*) malloc(cap * sizeof(int));
+
+    memset(t->has_left, 0, cap * sizeof(int));
+    memset(t->has_right, 0, cap * sizeof(int));
+
+    t->cap = cap;
+    t->nxt_avail = 0;
     return SUCCESS;
 }
 
 static int64_t tree_free(tree *t){
-    if(t->left != NULL){
-        tree_free(t->left);
+    if(t == NULL){
+        write_msg("Passed null pointer to tree_free");
+        return NULL_POINTER;
     }
-    if(t->right != NULL){
-        tree_free(t->right);
-    }
-    free(t);
+    free(t->data);
+    free(t->to_left);
+    free(t->to_right);
+    free(t->has_left);
+    free(t->has_right);
+    t->cap = t->nxt_avail = 0;
     return SUCCESS;
 }
 
 static int64_t tree_add(tree *t, pair *elem){
+    if(t == NULL){
+        write_msg("Passed null pointer to tree_add");
+        return NULL_POINTER;
+    }
+    if(t->nxt_avail == t->cap){
+        write_msg("Called tree_add with a full tree");
+        return OUT_OF_BOUNDS;
+    }
+
     int lvl = 0;
-    tree *curr = t;
-    if(!curr->init){
-        curr->init = 1;
-        curr->data = *elem;
+    if(t->nxt_avail == 0){
+        t->data[0] = *elem;
+        t->nxt_avail++;
     } else {
+        size_t at = 0;
         while(1){
             double elem_coord = elem->x;
-            double curr_coord = curr->data.x;
+            double curr_coord = t->data[at].x;
             if(lvl & 1){
                 elem_coord = elem->y;
-                curr_coord = curr->data.y;
+                curr_coord = t->data[at].y;
             }
             if(elem_coord < curr_coord){
-                if(curr->left == NULL){
-                    tree_init(&curr->left);
-                    curr->left->data = *elem;
-                    curr->left->init = 1;
+                if(!t->has_left[at]){
+                    t->has_left[at] = 1;
+                    t->to_left[at] = t->nxt_avail;
+                    t->data[t->nxt_avail] = *elem;
+                    t->nxt_avail++;
                     break;
                 } else {
-                    curr = curr->left;
+                    at = t->to_left[at];
                 }
             } else {
-                if(curr->right == NULL){
-                    tree_init(&curr->right);
-                    curr->right->data = *elem;
-                    curr->right->init = 1;
+                if(!t->has_right[at]){
+                    t->has_right[at] = 1;
+                    t->to_right[at] = t->nxt_avail;
+                    t->data[t->nxt_avail] = *elem;
+                    t->nxt_avail++;
                     break;
                 } else {
-                    curr = curr->right;
+                    at = t->to_right[at];
                 }
             }
             lvl ^= 1;
@@ -151,7 +172,7 @@ static int64_t tree_add(tree *t, pair *elem){
 
 static int64_t tree_query(double *ans, tree *tree, pair *query){
     double res = 1e18;
-    TRY(dfs(&res, tree, query, 0));
+    TRY(dfs(&res, tree, 0, query, 0));
     // printf("%0.3f\n", res);
     (*ans) = res;
     return SUCCESS;
@@ -160,16 +181,16 @@ static int64_t tree_query(double *ans, tree *tree, pair *query){
 // Module functions (exposed to Python)
 static PyObject* reset(PyObject* self, PyObject* args){
     if(do_free){
-        TRY(tree_free(sample));
+        TRY(tree_free(&sample));
         free(queries);
     }
     do_free = 1;
-    size_t query_cap;
+    size_t sample_cap, query_cap;
 
-    if(!PyArg_ParseTuple(args, "l", &query_cap)){
+    if(!PyArg_ParseTuple(args, "ll", &sample_cap, &query_cap)){
         return PyLong_FromLong(PARSE_ERROR);
     }
-    TRY(tree_init(&sample));
+    TRY(tree_init(&sample, sample_cap));
     queries = (pair*) malloc(query_cap * sizeof(pair));
     nqueries = 0;
 
@@ -183,7 +204,7 @@ static PyObject* add_point(PyObject* self, PyObject* args){
     }
     pair put; put.x = x; put.y = y;
     // printf("adding tree point %0.3f %0.3f\n", x, y);
-    TRY(tree_add(sample, &put));
+    TRY(tree_add(&sample, &put));
     return PyLong_FromLong(SUCCESS);
 }
 
@@ -210,7 +231,7 @@ static PyObject* run_queries(PyObject* self, PyObject* args){
     // #pragma omp parallel for
     for(size_t i = 0; i < nqueries; i++){
         double best;
-        TRY(tree_query(&best, sample, &queries[i]));
+        TRY(tree_query(&best, &sample, &queries[i]));
         res += best;
     }
     res /= nqueries;

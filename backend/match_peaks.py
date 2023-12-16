@@ -113,7 +113,7 @@ def difference(audio_maps, sample_maps):
 
 def offset(audio_map, sample_map):
     mean_dist = 0
-    pkd.reset(len(sample_map))
+    pkd.reset(len(audio_map), len(sample_map))
     # print('audio_map len', len(audio_map))
     # print('sizes:',len(audio_map), len(sample_map))
     random.shuffle(audio_map) #Reduce tree height
