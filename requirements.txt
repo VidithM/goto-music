@@ -6,4 +6,4 @@ pyrebase
 matplotlib
 numpy
 pydub
-
+scipy
